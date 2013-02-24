@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -wKU
 
-require 'open-uri'
 require 'net/https'
+require 'uri'
 require 'json'
 require 'optparse'
 
@@ -13,8 +13,9 @@ class Gist
   HOME_URL = 'http://www.hiltmon.com'
   LEDE = 'Create, Retrieve and Update Gists'
   
-  GIST_URL   = 'https://api.github.com/gists/%s'
-  CREATE_URL = 'https://api.github.com/gists'
+  GIST_URL   = 'https://api.github.com/gists'
+  USER_URL   = 'https://api.github.com/users/%s/gists'
+  # CREATE_URL = 'https://api.github.com/gists'
   
   attr_reader :options
   
@@ -30,6 +31,8 @@ class Gist
     case @command
     when 'GET'
       execute_get_gist_command
+    when 'LIST'
+      execute_list_gists_command
     when 'VIEW'
       execute_view_gist_command
     when 'RAW'
@@ -49,6 +52,12 @@ class Gist
       end      
     end    
   end
+  
+  def execute_list_gists_command
+    data = api_get_request(USER_URL % @parameter)
+    # TODO : HERE
+    puts data
+  end
 
   def execute_view_gist_command
     data = retrieve_gist @parameter
@@ -58,8 +67,8 @@ class Gist
     end
   end
   
-  def retrieve_gist(gist_id)
-    JSON.parse(open(GIST_URL % gist_id).read)
+  def retrieve_gist(params)
+    api_get_request(GIST_URL + "/#{params}")
   end
   
   def extract_content(data, key)
@@ -73,6 +82,20 @@ class Gist
   
   private
   
+  def api_get_request(url, params = nil)
+    uri = URI(url)
+    uri.query = URI.encode_www_form(params) if params
+        
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    
+    request = Net::HTTP::Get.new(uri.request_uri)
+    
+    response = http.request(request)
+    JSON.parse(response.body) if response.is_a?(Net::HTTPSuccess)
+  end
+  
   def parse_options
     @options = {}
     
@@ -83,6 +106,7 @@ class Gist
       @opts.separator ""
       @opts.separator  "Commands"
       @opts.separator  "    get <gist_id>: retrieves all the files in a gist and creates them locally"
+      @opts.separator  "    list <user>: Lists all the gists by user id"
       @opts.separator  "    view <gist_id>: displays the files in the gist by id"
       @opts.separator  "    raw <gist_id>: displays the raw json retrieved from github"
       @opts.separator  ""
