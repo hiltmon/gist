@@ -1,0 +1,123 @@
+#!/usr/bin/env ruby -wKU
+
+require 'open-uri'
+require 'net/https'
+require 'json'
+require 'optparse'
+
+class Gist
+  
+  VERSION = '0.0.1'
+  AUTHOR = 'Hilton Lipschitz'
+  TWITTER = '@hiltmon'
+  HOME_URL = 'http://www.hiltmon.com'
+  LEDE = 'Create, Retrieve and Update Gists'
+  
+  GIST_URL   = 'https://api.github.com/gists/%s'
+  CREATE_URL = 'https://api.github.com/gists'
+  
+  attr_reader :options
+  
+  def initialize(arguments)
+    @arguments = arguments
+    
+    parse_options
+    parse_commands
+  end
+  
+  def run
+    # puts "Running: #{@command} #{@parameter}"
+    case @command
+    when 'GET'
+      execute_get_gist_command
+    when 'VIEW'
+      execute_view_gist_command
+    when 'RAW'
+      puts retrieve_gist(@parameter)
+    else
+      puts @opts
+    end
+  end
+  
+  def execute_get_gist_command
+    data = retrieve_gist @parameter
+    data["files"].keys.each do |key|
+      content = extract_content(data, key)
+      file_name = extract_file_name(data, key)
+      File.open(file_name, "w") do |f| # Ruby 1.8 Style (not IO.write)
+        f << content
+      end      
+    end    
+  end
+
+  def execute_view_gist_command
+    data = retrieve_gist @parameter
+    data["files"].keys.each do |key|
+      puts "\n\n#{extract_file_name(data, key)}\n" if data["files"].keys.length > 1
+      puts extract_content(data, key)
+    end
+  end
+  
+  def retrieve_gist(gist_id)
+    JSON.parse(open(GIST_URL % gist_id).read)
+  end
+  
+  def extract_content(data, key)
+    data["files"][key]["content"]
+  end
+
+  def extract_file_name(data, key)
+    data["files"][key]["filename"]
+    # data["files"].map{|name, content| content['filename'] }.join("\n\n")
+  end
+  
+  private
+  
+  def parse_options
+    @options = {}
+    
+    title = "#{LEDE}\nBy #{AUTHOR} (#{TWITTER}) #{HOME_URL}\n"
+    
+    @opts = OptionParser.new
+    @opts.banner = "#{title}\nUsage: gist [options] command parameter"
+      @opts.separator ""
+      @opts.separator  "Commands"
+      @opts.separator  "    get <gist_id>: retrieves all the files in a gist and creates them locally"
+      @opts.separator  "    view <gist_id>: displays the files in the gist by id"
+      @opts.separator  "    raw <gist_id>: displays the raw json retrieved from github"
+      @opts.separator  ""
+      @opts.separator  "Options"
+    @opts.on("-v", "--[no-]verbose", "Verbose Output") { |v| options[:verbose] = v }
+    @opts.on('-h', '--help', 'Display this screen' ) { puts @opts; exit 0 }
+    begin
+      @opts.parse!(@arguments) 
+    rescue => e
+      puts e
+      puts
+      puts @opts
+      exit(-1)
+    end
+  end
+  
+  def parse_commands
+    if @arguments.empty?
+      puts @opts
+      exit(-1)
+    end
+
+    @command = ARGV[0].upcase
+
+    # TODO: Handle stdin for some commends
+    if @arguments.length < 2
+      puts "Command #{@command} requires a parameter...\n\n"
+      puts @opts
+      exit(-1)
+    end
+    
+    @parameter = ARGV[1]
+  end
+  
+end
+
+app = Gist.new(ARGV)
+app.run
