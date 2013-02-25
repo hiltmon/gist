@@ -2,7 +2,7 @@
 
 Command line access to create, get and update GitHub gists.
 
-What makes this one unique is that it *caches* Gist id's so you can *update* gists from the command line without remembering the ID to file name mapping. This cache is also used in the TextMate Gist bundle (this script was created to test it).
+What makes this one unique is that it *caches* Gist id's so you can *update* gists from the command line without remembering the ID to file name mapping. This cache is also used in the [TextMate Gist bundle](https://github.com/hiltmon/Gist.tmbundle) (this script was created to test it).
 
 On OS X, it also leaves the gist URL in the clipboard.
 
