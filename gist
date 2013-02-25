@@ -232,7 +232,7 @@ class Gist
   def make_data(file_names, description)
     file_data = {}
     file_names.each do |file_name|
-      file_data[file_name] = {:content => IO.read(file_name).to_s }
+      file_data[File.basename(file_name)] = {:content => IO.read(file_name).to_s }
     end
 
     data = {"files" => file_data}

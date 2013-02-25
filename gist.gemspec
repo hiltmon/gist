@@ -16,4 +16,5 @@ Gem::Specification.new do |gem|
   gem.version       = Gist::VERSION
   
   gem.executables   = %w{ gist }
+  gem.add_dependency('json')
 end
