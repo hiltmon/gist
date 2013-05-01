@@ -192,6 +192,7 @@ class Gist
     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
     
     request = Net::HTTP::Get.new(uri.request_uri)
+    request.add_field('User-Agent', 'TextMate Gists Bundle')
     
     response = http.request(request)
     if response.code.to_i >= 300
@@ -212,6 +213,7 @@ class Gist
     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
     request = Net::HTTP::Post.new(uri.request_uri)
+    request.add_field('User-Agent', 'TextMate Gists Bundle')
     request.body = JSON.generate(make_data(file_names, nil))
     request["Content-Type"] = "application/json"
     user, password = auth()
